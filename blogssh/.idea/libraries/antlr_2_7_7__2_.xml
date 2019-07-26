@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="antlr-2.7.7 (2)">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/web/WEB-INF/lib/antlr-2.7.7.jar!/" />
+      <root url="jar://$PROJECT_DIR$/web/WEB-INF/lib/dom4j-1.6.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
