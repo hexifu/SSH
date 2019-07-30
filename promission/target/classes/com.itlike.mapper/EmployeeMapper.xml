@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.itlike.mapper.EmployeeMapper" >
+  <resultMap id="BaseResultMap" type="com.itlike.domain.Employee" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="username" property="username" jdbcType="VARCHAR" />
+    <result column="inputtime" property="inputtime" jdbcType="TIMESTAMP" />
+    <result column="tel" property="tel" jdbcType="VARCHAR" />
+    <result column="email" property="email" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="BIT" />
+    <result column="admin" property="admin" jdbcType="BIT" />
+
+    <association property="department" javaType="com.itlike.domain.Department" columnPrefix="d_">
+      <result property="id" column="id"/>
+      <result property="name" column="name"/>
+    </association>
+
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from employee
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+
+  <!--   打破与角色之间的关系-->
+  <delete id="deleteRoleRel">
+    delete from employee_role_rel where eid=#{id}
+  </delete>
+
+  <!--保存员工-->
+  <insert id="insert" parameterType="com.itlike.domain.Employee" useGeneratedKeys="true" keyProperty="id">
+    insert into employee (
+    id,
+    username,
+    password,
+    inputtime,
+    tel,
+    email,
+    state,
+    admin,
+    dep_id)
+    values (#{id}, #{username}, #{password},#{inputtime},
+      #{tel}, #{email}, #{state}, #{admin},
+      #{department.id})
+  </insert>
+  <!--保存员工和角色关系-->
+  <insert id="insertEmployeeAndRoleRel">
+    insert into employee_role_rel (eid,rid) values (#{id},#{rid});
+  </insert>
+  <!--更新员工-->
+  <update id="updateByPrimaryKey" parameterType="com.itlike.domain.Employee" >
+    update employee
+    set username = #{username},
+      inputtime = #{inputtime},
+      tel = #{tel},
+      email = #{email},
+      admin = #{admin},
+      dep_id = #{department.id}
+    where id = #{id}
+  </update>
+  <!--设置员工离职-->
+  <update id="updateState">
+     update employee set state=false where id=#{id}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select id, username, inputtime, tel, email, state, admin, dep_id
+    from employee
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+
+  <!--搜索框条件查询-->
+  <sql id="where_sql">
+    <where>
+      <if test="keyword !=null and keyword !=''">
+        and e.username like concat('%',#{keyword},'%')
+        or e.tel like concat('%',#{keyword},'%')
+        or e.email like concat('%',#{keyword},'%')
+      </if>
+    </where>
+  </sql>
+  <!--员工关联部门查询-->
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select
+    e.id,
+    e.username,
+    e.inputtime,
+    e.tel,
+    e.email,
+    e.state,
+    e.admin,
+    d.id as d_id,
+    d.`name` as d_name
+    from employee as e
+    LEFT JOIN department as d
+    ON e.dep_id = d.id
+    <include refid="where_sql"/>
+    order by e.id desc
+  </select>
+
+  <!--根据用户名查询有没有当前用户-->
+  <select id="getEmployeeWithUserName" resultType="com.itlike.domain.Employee">
+   select * from employee where username=#{username}
+  </select>
+
+  <!--根据用户的id查询角色编号名称-->
+  <select id="getRolesById" resultType="java.lang.String">
+    select r.rnum from employee_role_rel as er
+    left join role as r
+    on er.rid=r.rid
+    where eid=#{id}
+
+  </select>
+
+  <!--根据用户id查询权限 资源名称-->
+  <!--
+     1.   查询出所有的角色和权限
+     2.   筛选出当前用户有哪些角色
+  -->
+  <select id="getPermissionsById" resultType="java.lang.String">
+
+    select distinct p.presource from role_permission_rel as rp
+    left join permission as p
+    on rp.pid=p.pid where rid in(select rid from employee_role_rel where eid=#{id})
+
+  </select>
+</mapper>
